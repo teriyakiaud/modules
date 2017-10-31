@@ -1,0 +1,149 @@
+---
+title: "Module 14"
+output: html_document
+---
+
+```{r}
+library(curl)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN597_Fall17/zombies.csv")
+z <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = TRUE)
+class(z$gender) #if discrete variable not working, try to change it to "factor", might not work if character
+#can also be done as ex/: d$gender <- as.factor(d$gender)
+```
+
+```{r}
+summary(z$gender)
+```
+```{r}
+plot(z$height ~ z$gender)
+```
+```{r}
+m <- lm(data = z, height ~ gender)
+summary(m)
+```
+```{r}
+levels(z$gender)
+#height = 65.5983 + 4.0154 x gender
+```
+```{r}
+z$gender <- relevel(z$gender, ref = "Male") #male is now the baseline (intercept)
+m <- lm(data = z, height ~ gender)
+summary(m)
+```
+
+```{r}
+p <- 1 - pf(276.9, df1 = 1, df2 = 998)
+p
+```
+```{r}
+z$occupation <- "temp"
+unique(z$major)
+```
+
+```{r}
+levels(z$major)
+row(data.frame(levels(z$major)))
+```
+```{r}
+z$occupation[row(data.frame(levels(z$major))) %in% c(1, 2, 3, 5, 6, 14, 15, 
+    16, 18, 21, 23)] <- "natural science" 
+#categorizes these specific majors as under the natural science etc. categories
+z$occupation[row(data.frame(levels(z$major))) %in% c(7, 8, 12, 17, 19, 22)] <- "logistics"
+z$occupation[row(data.frame(levels(z$major))) %in% c(4, 18, 20)] <- "engineering"
+z$occupation[row(data.frame(levels(z$major))) %in% c(9, 10, 11, 13, 24, 25, 
+    26)] <- "other"
+z$occupation <- as.factor(z$occupation)
+levels(z$occupation)
+```
+
+```{r}
+z$occupation <- relevel(z$occupation, ref = "natural science")
+levels(z$occupation)
+#natural science comes up first so the releveling worked
+```
+```{r}
+plot(data = z, zombies_killed ~ occupation)
+```
+```{r}
+m <- lm(data = z, zombies_killed ~ occupation)
+summary(m)
+```
+```{r}
+p <- 1 - pf(0.526, df1 = 3, df2 = 996)  # F test
+p
+```
+
+```{r}
+m <- aov(data = z, zombies_killed ~ occupation)
+summary(m)
+par(mfrow = c(2, 2))
+plot(m)
+```
+
+```{r}
+#ANOVA needs samples that are about thee same size
+library(curl)
+library(dplyr)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN597_Fall17/gibbon-femurs.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = TRUE)
+d$age <- factor(d$age, levels = c("inf", "juv", "subadult", "adult"))  #this reorders the age levels so that they're in order
+head(d)
+```
+
+```{r}
+hist(d$femur.length)
+#not normal data, needs to be normal within categories you are trying to differentiate
+qqnorm(d$femur.length)
+```
+
+```{r}
+plot(data = d, femur.length ~ age)  # boxplot with medians
+means <- summarise(group_by(d, age), mean(femur.length))  # calculate average by group
+points(1:4, means$`mean(femur.length)`, pch = 4, cex = 1.5)  # add means to plot
+```
+```{r}
+sds <- summarise(group_by(d, age), sd(femur.length))
+max(sds$`sd(femur.length)`)/min(sds$`sd(femur.length)`)
+```
+```{r}
+par(mfrow = c(2, 2))
+hist(d$femur.length[d$age == "inf"], main = "inf")
+qqnorm(d$femur.length[d$age == "inf"])
+hist(d$femur.length[d$age == "juv"], main = "juv")
+qqnorm(d$femur.length[d$age == "juv"])
+```
+```{r}
+par(mfrow = c(1, 1))
+plot(data = d, femur.length ~ age)
+```
+```{r}
+m <- aov(data = d, femur.length ~ age)  # femur length related to age
+summary(m)
+```      
+```{r}
+m <- lm(data = d, femur.length ~ age)
+summary(m)
+```
+```{r}
+pairwise.t.test(d$femur.length, d$age, p.adj = "bonferroni")
+#still significant p-value
+```
+```{r}
+m <- aov(d$femur.length ~ d$age)
+posthoc <- TukeyHSD(m, "d$age", conf.level = 0.95)
+posthoc
+```
+
+```{r}
+m <- kruskal.test(data = d, femur.length ~ age)
+m
+#tests null hypothesis that the MEDIANS do not differ instead of the MEANS
+```
+```{r}
+d <- arrange(d, femur.length)  # use {dplyr} to sort by femur.length
+d <- mutate(d, femur.rank = row(data.frame(d$femur.length)))  # use {dplyr} to add new variable of rank femur.length
+m <- kruskal.test(data = d, femur.rank ~ age)
+m
+#non-parametric
+```
+
