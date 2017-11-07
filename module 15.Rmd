@@ -55,7 +55,7 @@ M <- as.matrix(normalized)
 ```
 ```{r}
 U = chol(R) #using matrix R from the first chunk of code
-newM = M %*% U
+newM = M %*% U #matrix multiplied by the decomposed matrix U
 new = as.data.frame(newM)
 names(new) = c("Y", "X1", "X2", "X3")
 cor(new)
@@ -68,7 +68,7 @@ plot(new)
 ```
 ```{r}
 df<- sweep(new, 2, STATS = sds, FUN = "*")
-df<- sweep(df, 2, STATS = ms, FUN = "+")
+df<- sweep(df, 2, STATS = ms, FUN = "+") #scales mean and sd back out so no longer standardized
 head(df)
 ```
 ```{r}
@@ -84,8 +84,166 @@ g2 <- ggplot(data = df, aes(x = X2, y = Y)) + geom_point() + geom_smooth(method 
     formula = y ~ x)
 g3 <- ggplot(data = df, aes(x = X3, y = Y)) + geom_point() + geom_smooth(method = "lm", 
     formula = y ~ x)
-grid.arrange(g1, g2, g3, ncol = 3)
+grid.arrange(g1, g2, g3, ncol = 3) #similar to par command for ggplot2
 ```
+```{r}
+m1 <- lm(data = df, formula = Y ~ X1)
+summary(m1) #rsquared shows correlation
+```
+```{r}
+m3 <- lm(data = df, formula = Y ~ X3)
+summary(m3) #r squared value shows pretty much no correlation
+```
+```{r}
+m <- lm(data = df, formula = Y ~ X1 + X2 + X3)
+coef(m) #gives you beta values
+```
+```{r}
+summary(m)
+```
+
+```{r}
+plot(fitted(m), residuals(m))
+#if this model looked like a line or cloud with slope, there is some covariate that we are not accounting for and need to. if just a cloud, means our model accounts for everything but random error
+```
+```{r}
+hist(residuals(m))
+```
+```{r}
+qqnorm(residuals(m))
+```
+```{r}
+f <- (summary(m)$r.squared * (nrow(df) - (ncol(df) - 1) - 1))/((1 - summary(m)$r.squared) * 
+    (ncol(df) - 1))
+f
+```
+```{r}
+library(curl)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN597_Fall17/zombies.csv")
+z <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = TRUE)
+head(z)
+```
+```{r}
+#see how height and weight are affected by age
+m <- lm(data = z, height ~ weight + age)
+summary(m)
+#intecept values show that there is .163 change in weight with height and 0.618 change in height with weight. 
+```
+```{r}
+library(car)
+m <- lm(data = z, formula = height ~ gender + age)
+summary(m)
+```
+```{r}
+m.aov <- Anova(m, type = "II")
+m.aov #use Anova capital A function within car() to use type II analysis
+```
+```{r}
+plot(fitted(m), residuals(m))
+```
+```{r}
+hist(residuals(m)) #slightly skewed
+```
+```{r}
+qqnorm(residuals(m))
+```
+```{r}
+#height = 46.7251 + 0.94091 x age (46 is height intercept, 0.94091 is age intercept)
+        #  height males = 46.7251 + 4.00224 + 0.94091 x age (4.00224 is associated with male gender)
+
+library(ggplot2)
+p <- ggplot(data = z, aes(x = age, y = height)) + geom_point(aes(color = factor(gender))) + 
+    scale_color_manual(values = c("goldenrod", "blue"))
+p <- p + geom_abline(slope = m$coefficients[3], intercept = m$coefficients[1], 
+    color = "goldenrod4")
+p <- p + geom_abline(slope = m$coefficients[3], intercept = m$coefficients[1] + 
+    m$coefficients[2], color = "darkblue")
+p
+```
+```{r}
+m <- lm(data = z, formula = height ~ age + gender)
+summary(m)
+```
+```{r}
+confint(m, level = 0.95)
+```
+```{r}
+ci <- predict(m, newdata = data.frame(age = 29, gender = "Male"), interval = "confidence", 
+    level = 0.95) #put parameters, 29 year old male, with 95% confidence
+ci
+
+pi <- predict(m, newdata = data.frame(age = 29, gender = "Male"), interval = "prediction", 
+    level = 0.95)
+pi #prediction interval
+```
+```{r}
+m <- lm(data = z, height ~ age + gender + age:gender) # : operator is specific interaction effects
+summary(m)
+```
+```{r}
+coefficients(m)
+```
+```{r}
+library(ggplot2)
+library(gridExtra)
+p1 <- ggplot(data = z, aes(x = age, y = height)) + geom_point(aes(color = factor(gender))) + 
+    scale_color_manual(values = c("goldenrod", "blue"))
+p1 <- p1 + geom_abline(slope = m$coefficients[2], intercept = m$coefficients[1], 
+    color = "goldenrod4")
+p1 <- p1 + geom_abline(slope = m$coefficients[2] + m$coefficients[4], intercept = m$coefficients[1] + 
+    m$coefficients[3], color = "darkblue")
+p1
+```
+```{r}
+p2 <- ggplot(data = z, aes(x = age, y = height)) + geom_point(aes(color = factor(gender))) + 
+    scale_color_manual(values = c("goldenrod", "blue")) + geom_smooth(method = "lm", 
+    aes(color = factor(gender), fullrange = TRUE))
+grid.arrange(p1, p2, ncol = 2)
+```
+```{r}
+library(dplyr)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN597_Fall17/KamilarAndCooperData.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = TRUE)
+head(d)
+```
+```{r}
+d <- select(d, Brain_Size_Female_Mean, Family, Body_mass_female_mean, MeanGroupSize, 
+    DayLength_km, HomeRange_km2, Move)
+```
+```{r}
+m <- lm(data = d, log(HomeRange_km2) ~ log(Body_mass_female_mean) + log(Brain_Size_Female_Mean) + 
+    MeanGroupSize + Move)
+summary(m)
+```
+```{r}
+plot(m$residuals)
+```
+```{r}
+qqnorm(m$residuals)
+```
+```{r}
+shapiro.test(m$residuals)
+```
+```{r}
+m <- lm(data = d, log(HomeRange_km2) ~ log(Body_mass_female_mean) + log(Brain_Size_Female_Mean) + 
+    MeanGroupSize)
+summary(m)
+```
+```{r}
+plot(m$residuals)
+```
+```{r}
+qqnorm(m$residuals)
+```
+```{r}
+shapiro.test(m$residuals) #no significant deviation from normal 
+
+#everything above from kamilar and cooper shows 2 different model, how would you decide which would be the appropriate models?
+```
+
+
+
+
 
 
 
