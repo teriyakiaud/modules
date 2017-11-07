@@ -1,0 +1,91 @@
+---
+title: "Module 15"
+output: html_document
+---
+
+```{r}
+R = matrix(cbind(1, 0.8, -0.5, 0, 0.8, 1, -0.3, 0.3, -0.5, -0.3, 1, 0.6, 0, 0.3, 0.6, 1), nrow = 4)
+```
+
+```{r}
+n <- 1000
+k <- 4
+M <- NULL
+V <- NULL
+mu <- c(15, 40, 5, 23)
+s <- c(5, 20, 4, 15)
+for (i in 1:k) {
+  V <- rnorm(n, mu[i], s[i])
+  M <- cbind(M, V)
+  
+  #for every variable from 1 to 4 (k), M binds all the variables in M,v 
+}
+M <- matrix(M, nrow = n, ncol = k) #every m is data point, every row is column 
+orig <- as.data.frame(M)
+names(orig) = c("Y", "X1", "X2", "X3")
+head(orig)
+```
+
+```{r}
+cor(orig) #at this point no variables are correlated with each other
+```
+```{r}
+plot(orig)
+```
+
+```{r}
+ms <- apply(orig, 2, FUN = "mean")
+ms
+```
+```{r}
+sds <- apply(orig, 2, FUN = "sd")
+sds
+```
+```{r}
+normalized <- sweep(orig, 2, STATS = ms, FUN = "-")
+
+normalized <- sweep(normalized, 2, STATS = sds, FUN = "/")
+head(normalized)
+#columns are variables and row is data points, this tells sweep this
+
+#With apply() we apply a function to the specified margin of an array or matrix, and with sweep() we then perform whatever function is specified on all of the elements in an array specified by the given margin.
+```
+```{r}
+M <- as.matrix(normalized)
+```
+```{r}
+U = chol(R) #using matrix R from the first chunk of code
+newM = M %*% U
+new = as.data.frame(newM)
+names(new) = c("Y", "X1", "X2", "X3")
+cor(new)
+```
+```{r}
+plot(orig)
+```
+```{r}
+plot(new)
+```
+```{r}
+df<- sweep(new, 2, STATS = sds, FUN = "*")
+df<- sweep(df, 2, STATS = ms, FUN = "+")
+head(df)
+```
+```{r}
+cor(df)
+plot(df)
+```
+```{r}
+library(ggplot2)
+require(gridExtra)
+g1 <- ggplot(data = df, aes(x = X1, y = Y)) + geom_point() + geom_smooth(method = "lm", 
+    formula = y ~ x)
+g2 <- ggplot(data = df, aes(x = X2, y = Y)) + geom_point() + geom_smooth(method = "lm", 
+    formula = y ~ x)
+g3 <- ggplot(data = df, aes(x = X3, y = Y)) + geom_point() + geom_smooth(method = "lm", 
+    formula = y ~ x)
+grid.arrange(g1, g2, g3, ncol = 3)
+```
+
+
+

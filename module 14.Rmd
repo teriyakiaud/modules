@@ -147,3 +147,101 @@ m
 #non-parametric
 ```
 
+```{r}
+library(ggplot2)
+means <- summarise(group_by(d, age, sex), mean(femur.length))  # first we calculate averages by combination of factors
+means
+```
+```{r}
+sds <- summarise(group_by(d, age, sex), sd(femur.length))  # first we calculate averages by combination of factors
+sds
+```
+
+```{r}
+max(sds$`sd(femur.length)`)/min(sds$`sd(femur.length)`)
+```
+```{r}
+p <- ggplot(data = d, aes(y = femur.length, x = sex)) + geom_boxplot() + facet_wrap(~age, 
+    ncol = 4)  # and let's plot what the data look like
+# p <- p + geom_point() 
+p <- p + stat_summary(fun.y = mean, colour = "darkgreen", geom = "point", shape = 8, 
+    size = 6)
+p
+```
+```{r}
+m <- summary(aov(data = d, femur.length ~ age + sex))
+m
+```
+```{r}
+m <- aov(data = d, femur.length ~ age + sex + age:sex)  # : operator includes specific interaction terms
+summary(m)
+#which is also the same as
+m <- aov(data = d, femur.length ~ age * sex)  # * operator includes all interaction terms
+summary(m)
+```
+```{r}
+m <- lm(data = d, femur.length ~ age * sex)  # or using the lm() function...
+summary(m)
+```
+```{r}
+interaction.plot(x.factor = d$age, xlab = "Age", trace.factor = d$sex, trace.label = "Sex", 
+    response = d$femur.length, fun = mean, ylab = "Mean Femuur Length")
+#plotting means of femur length in each life stage, shows same info as box plots
+```
+```{r}
+m1 <- aov(data = d, femur.length ~ age * sex)
+summary(m1)
+#order in which fCtors are entered intolinear model results in different values for entries in ANOVA table
+```
+```{r}
+m2 <- aov(data = d, femur.length ~ sex * age)
+summary(m2)
+```
+```{r}
+#aov() function places more emphasis on the FIRST factor should be used when you want to control for the first variable entered into formula (TYPE 1)
+#TYPE 2 (more appropriate for unbalanced design) and TYPE 3 (useful when significant interaction effect)do not give more emphasis to one effect over another, unaffected by sample size 
+library(car)
+m1 <- aov(data = d, femur.length ~ age + sex)
+m1 <- Anova(m1, type = "II") #Anova() is from car package and can run TYPE 2 and TYPE 3
+m1
+```
+```{r}
+m1 <- aov(data = d, femur.length ~ sex + age)
+m2 <- Anova(m2, type = "II")
+m2
+```
+```{r}
+m1 <- aov(data = d, femur.length ~ age * sex)
+m1 <- Anova(m1, type = "III") #3 is best option to use because data is unbalanced (most is juvenile and infant) and there is significaant interaction
+m1
+```
+```{r}
+m2 <- aov(data = d, femur.length ~ sex * age)
+m2 <- Anova(m2, type = "III")
+m2
+```
+```{r}
+obs.table <- table(z$occupation)  # returns the same as summary()
+obs.table
+```
+```{r}
+exp.table <- rep(0.25 * length(z$occupation), 4)
+exp.table 
+#expected values of survival
+```
+```{r}
+occupation.matrix <- data.frame(cbind(obs.table, exp.table, 
+                                      (obs.table - exp.table)^2/exp.table)) #basic chi-square formula
+names(occupation.matrix) <- c("Oi", "Ei", "(Oi-Ei)^2/Ei")
+occupation.matrix
+```
+```{r}
+obs.table = table(z$gender, z$occupation)
+obs.table
+mosaicplot(t(obs.table), main = "Contingency Table", col = c("darkseagreen", 
+    "gray")) 
+```
+```{r}
+chisq.test(x = obs.table)
+```
+
