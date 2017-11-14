@@ -8,7 +8,7 @@ library(curl)
 f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN597_Fall17/zombies.csv")
 z<- read.csv (f, header = TRUE, sep = ",", stringsAsFactors = TRUE)
 m1 <- lm(data = z, height ~ age * gender) #full model with covariate?
-m2 <- lm(data = z, height ~ age + gender) #model without interactions
+m2 <- lm(data = z, height ~ age + gender) #model without interactions, slightly reduced
 m3 <- lm(data = z, height ~ age) #model with only 1 predictor
 m4 <- lm(data = z, height ~ 1) #intercept only model
 ```
