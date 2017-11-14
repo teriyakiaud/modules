@@ -15,6 +15,8 @@ m4 <- lm(data = z, height ~ 1) #intercept only model
 
 ```{r}
 anova(m2, m1, test = "F") #compares reduced model without interactions (m2) to the full model with interactions (m1)
+
+#gives significant p-value 0.01, so significant difference between using each model
 ```
 ```{r}
 f <- ((summary(m1)$r.squared - summary(m2)$r.squared) * (nrow(z) - 3 - 1))/((1 - summary(m1) $r.squared) * (3 - 2))
@@ -26,6 +28,8 @@ p
 ```
 ```{r}
 anova(m3, m2, test = "F")
+
+#significant p-value shows that m2 is much more useful model than m3, smaller sum of squares
 ```
 
 ```{r}
@@ -37,28 +41,41 @@ p <- 1 - pf(f, df1 = 2 - 1, df2 = nrow(z) - 2, lower.tail = TRUE)
 #df1 = q-p, df2 = n-q
 p
 ```
+
+#forward selection: starting with few variables and systematically adding more until ideal model reached
 ```{r}
 m0 <- lm(data = z, height ~ 1)
 summary (m0)
 ```
 ```{r}
 add1(m0, scope = . ~ . + age + weight + zombies_killed + years_of_education, test = "F")
+
+# .~. means to take what is already present in the model (and then add whatever comes after it)
+#table gives all the additions to model, significant results based of age, weight, years of education, but not zombies killed
 ```
 ```{r}
 m1 <- update(m0, formula = . ~ . + weight)
 summary(m1)
+
+#order of addition changes result, add the one with the largest f-value first(which in this case in weight from the table above).
 ```
 ```{r}
 add1(m1, scope = . ~ . + age + weight + zombies_killed + years_of_education, test = "F")
+
+#weight is still included in the equation even though here, .~. already includes weight
 ```
 ```{r}
 m2 <- update(m1, formula = . ~ . + age)
 summary(m2)
+
+#now update model with age added since it is significant covariate with high F-value.
 ```
 ```{r}
 add1(m2, scope = . ~ . + age + weight + zombies_killed + years_of_education, 
     test = "F")
 summary(m2)
+
+#table below shows that after adding in age and weight to height, there is not significant effect with zombies killed/years of education so no need to add more variables
 ```
 ```{r}
 m0 <- lm(data = z, height ~ age + weight + zombies_killed + years_of_education)
@@ -70,6 +87,8 @@ drop1(m0, test = "F")
 ```{r}
 m1 <- update(m0, . ~ . - years_of_education)
 summary(m1)
+
+#drops years of education since table above shows that it had the smallest F-value
 ```
 ```{r}
 drop1(m1, test = "F")
@@ -77,12 +96,16 @@ drop1(m1, test = "F")
 ```{r}
 m2 <- update(m1, . ~ . - zombies_killed)
 summary(m2)
+
+#drops zombies killed since there is not significant effect to model with it in the model
 ```
 ```{r}
 drop1(m2, test = "F")
 ```
 ```{r}
 summary(m2)
+
+#table above shows that age and weight have significant effect so they cannot be removed from the model for the most accurate model
 ```
 ```{r}
 library(MASS)
