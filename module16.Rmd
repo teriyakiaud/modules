@@ -110,8 +110,14 @@ summary(m2)
 ```{r}
 library(MASS)
 stepAIC(m0, direction = "both")
+
+#does not require normal gaussian distribution, works regardless of distribution
+
+#look at AIC values in table below and remove the lowest AIC values from your model, in this case results in the same model as we did above by stepwise adding and removing F value
 ```
 ```{r}
 library(AICcmodavg)
 print(aictab(list(m0, m1, m2), c("m0", "m1", "m2")), LL = FALSE)
+
+#there is also aicc which is good for small datasets and is corrected to be more conservative, most people now just use aicc
 ```
